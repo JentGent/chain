@@ -1,0 +1,80 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <style>
+            body {
+                margin: 0px;
+                padding: 0px;
+            }
+            canvas {
+                margin: 0px;
+                padding: 0px;
+                position: absolute;
+                left: 0px;
+                top: 0px;
+            }
+            #defaultCanvas0 {
+                z-index: 1;
+            }
+        </style>
+    </head>
+    <body oncontextmenu="return false;">
+        <script id="vertex" type="vertex-shader">#version 100
+attribute vec2 a_vertPos;
+varying vec2 v_vertPos;
+void main() {
+    v_vertPos = a_vertPos;
+    v_vertPos.y = -v_vertPos.y;
+    gl_Position = vec4(a_vertPos, 0, 1);
+}
+        </script>
+        <script id="fragment" type="fragment-shader">#version 100
+precision highp float;
+varying vec2 v_vertPos;
+uniform sampler2D u_canvas;
+void main() {
+    vec2 t = v_vertPos * 0.5 + vec2(0.5);
+    t = floor(t * 200.) / 200.;
+    gl_FragColor = texture2D(u_canvas, t);
+}
+        </script>
+        <canvas id="pixel" width="1000px" height="800px"></canvas>
+        <script type="text/javascript" src="p5.min.js"></script>
+        <script type="text/javascript" src="howler.min.js"></script>
+        <script type="text/javascript">
+            var glcanvas = document.getElementById("pixel");
+            var gl = glcanvas.getContext("webgl");
+            var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vertexShader, document.getElementById("vertex").innerHTML);
+            gl.compileShader(vertexShader);
+            if(!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) { throw new Error("Couldn't compile vertex shader.\n" + gl.getShaderInfoLog(vertexShader)); }
+            var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fragmentShader, document.getElementById("fragment").innerHTML);
+            gl.compileShader(fragmentShader);
+            if(!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) { throw new Error("Couldn't compile fragment shader.\n" + gl.getShaderInfoLog(fragmentShader)); }
+            var program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if(!gl.getProgramParameter(program, gl.LINK_STATUS)) { throw new Error("Could not compile WebGL program because code has error:\n" + gl.getProgramInfoLog(program)); }
+            gl.validateProgram(program);
+            if(!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) { throw new Error("Could not validate WebGL program.\n" + gl.getProgramInfoLog(program)); }
+            gl.useProgram(program);
+            var verts = new Float32Array([
+                -1, -1,
+                1, -1,
+                1, 1,
+                -1, -1,
+                -1, 1,
+                1, 1,
+            ]);
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+            gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+            var attribute = gl.getAttribLocation(program, "a_vertPos");
+            gl.enableVertexAttribArray(attribute);
+            gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 2 * verts.BYTES_PER_ELEMENT, 0);
+        </script>
+        <script type="text/javascript" src="main.js"></script>
+    </body>
+</html>
